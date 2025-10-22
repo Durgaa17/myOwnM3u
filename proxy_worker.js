@@ -1,9 +1,9 @@
-//https://your-worker.your-subdomain.workers.dev/?url=https://raw.githubusercontent.com/Durgaa17/myOwnM3u/refs/heads/main/movie.m3u
 addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request));
+  event.respondWith(handleRequest(event));
 });
 
-async function handleRequest(request) {
+async function handleRequest(event) {
+  const request = event.request;
   const url = new URL(request.url);
   const pathname = url.pathname;
   const targetUrl = url.searchParams.get('url');
@@ -40,7 +40,7 @@ async function handleRequest(request) {
         headers.set('Cache-Control', 'public, max-age=3600'); // Cache streams for 1 hour
         const cacheResponse = new Response(clonedResponse.body, { headers });
 
-        // Asynchronously cache
+        // Cache asynchronously
         event.waitUntil(cache.put(cacheKey, cacheResponse));
 
         // Return the original response for streaming
@@ -97,7 +97,7 @@ async function handleRequest(request) {
         // Add Cache-Control for M3U (5 minutes)
         response.headers.set('Cache-Control', 'public, max-age=300');
 
-        // Asynchronously cache
+        // Cache asynchronously
         event.waitUntil(cache.put(cacheKey, response.clone()));
       } catch (error) {
         return new Response('Error proxying playlist: ' + error.message, { status: 500 });
