@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>M3U Player</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; text-align: center; }
+    video { width: 100%; max-width: 800px; margin: 20px auto; display: block; }
+    ul { list-style: none; padding: 0; }
+    li { margin: 10px 0; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h1>M3U Player</h1>
+  <video id="video" controls></video>
+  <div id="stream-list"></div>
+  <div id="error" class="error"></div>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script>
+    const video = document.getElementById('video');
+    const streamList = document.getElementById('stream-list');
+    const errorDiv = document.getElementById('error');
+    const playlistUrl = 'https://smoke.roti.dpdns.org/?url=https://raw.githubusercontent.com/Durgaa17/myOwnM3u/refs/heads/main/movie.m3u';
+
+    // Fetch the M3U playlist
+    fetch(playlistUrl)
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to fetch playlist: ' + response.status);
+        return response.text();
+      })
+      .then(m3u => {
+        // Check if it’s an HLS playlist
+        if (m3u.includes('#EXT-X-STREAM-INF') || m3u.includes('.ts')) {
+          if (Hls.isSupported()) {
+            const hls = new Hls({
+              debug: true // Enable debug logs for HLS.js
+            });
+            hls.loadSource(playlistUrl);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.ERROR, (event, data) => {
+              errorDiv.textContent = 'HLS Error: ' + data.type + ' - ' + data.details;
+            });
+            video.play().catch(err => {
+              errorDiv.textContent = 'Playback error: ' + err.message;
+            });
+          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = playlistUrl;
+            video.play().catch(err => {
+              errorDiv.textContent = 'Playback error: ' + err.message;
+            });
+          } else {
+            errorDiv.textContent = 'Browser does not support HLS playback.';
+          }
+        } else {
+          // Standard M3U: Parse and display stream links
+          const lines = m3u.split('\n');
+          let html = '<h3>Select a Stream</h3><ul>';
+          for (let i = 0; i < lines.length; i++) {
+            if (lines[i].startsWith('#EXTINF')) {
+              const title = lines[i].split(',')[1] || 'Stream ' + (i + 1);
+              const link = lines[i + 1];
+              if (link && link.startsWith('http')) {
+                html += `<li><a href="${link}" target="_blank">${title}</a></li>`;
+              }
+            }
+          }
+          html += '</ul>';
+          streamList.innerHTML = html;
+          video.style.display = 'none'; // Hide video player for non-HLS
+        }
+      })
+      .catch(err => {
+        errorDiv.textContent = 'Error loading playlist: ' + err.message;
+      });
+  </script>
+</body>
+</html>
