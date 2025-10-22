@@ -1,18 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>M3U Player</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; text-align: center; }
-    video { width: 100%; max-width: 800px; margin: 20px auto; display: block; }
-    ul { list-style: none; padding: 0; }
-    li { margin: 10px 0; }
-    .error { color: red; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 10px;
+      background: #000;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 2rem;
+      text-align: center;
+      margin: 10px 0;
+    }
+    video {
+      width: 100%;
+      max-width: 1200px;
+      height: auto;
+      max-height: 70vh;
+      background: #000;
+      border: 2px solid #444;
+    }
+    #stream-list {
+      width: 100%;
+      max-width: 800px;
+      margin: 20px 0;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin: 10px 0;
+    }
+    a {
+      color: #1e90ff;
+      text-decoration: none;
+      font-size: 1.5rem;
+      padding: 10px;
+      display: block;
+      background: #222;
+      border-radius: 5px;
+    }
+    a:hover, a:focus {
+      background: #1e90ff;
+      color: #fff;
+    }
+    .error {
+      color: #ff4444;
+      font-size: 1.2rem;
+      text-align: center;
+      margin: 10px 0;
+    }
+    @media (max-width: 600px) {
+      h1 { font-size: 1.5rem; }
+      a { font-size: 1rem; padding: 8px; }
+      video { max-height: 50vh; }
+    }
+    @media (min-width: 1200px) {
+      h1 { font-size: 2.5rem; }
+      a { font-size: 1.8rem; padding: 12px; }
+    }
   </style>
 </head>
 <body>
   <h1>M3U Player</h1>
-  <video id="video" controls></video>
+  <video id="video" controls playsinline></video>
   <div id="stream-list"></div>
   <div id="error" class="error"></div>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -22,56 +83,57 @@
     const errorDiv = document.getElementById('error');
     const playlistUrl = 'https://smoke.roti.dpdns.org/?url=https://raw.githubusercontent.com/Durgaa17/myOwnM3u/refs/heads/main/movie.m3u';
 
-    // Fetch the M3U playlist
     fetch(playlistUrl)
-      .then(response => {
-        if (!response.ok) throw new Error('Failed to fetch playlist: ' + response.status);
-        return response.text();
+      .then(res => {
+        if (!res.ok) throw new Error('Fetch error: ' + res.status);
+        return res.text();
       })
       .then(m3u => {
-        // Check if it’s an HLS playlist
         if (m3u.includes('#EXT-X-STREAM-INF') || m3u.includes('.ts')) {
           if (Hls.isSupported()) {
-            const hls = new Hls({
-              debug: true // Enable debug logs for HLS.js
-            });
+            const hls = new Hls({ debug: true });
             hls.loadSource(playlistUrl);
             hls.attachMedia(video);
-            hls.on(Hls.Events.ERROR, (event, data) => {
-              errorDiv.textContent = 'HLS Error: ' + data.type + ' - ' + data.details;
-            });
-            video.play().catch(err => {
-              errorDiv.textContent = 'Playback error: ' + err.message;
-            });
+            hls.on(Hls.Events.ERROR, (e, d) => { errorDiv.textContent = 'HLS Error: ' + d.details; });
+            video.play().catch(err => { errorDiv.textContent = 'Playback error: ' + err; });
           } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = playlistUrl;
-            video.play().catch(err => {
-              errorDiv.textContent = 'Playback error: ' + err.message;
-            });
+            video.play().catch(err => { errorDiv.textContent = 'Playback error: ' + err; });
           } else {
-            errorDiv.textContent = 'Browser does not support HLS playback.';
+            errorDiv.textContent = 'HLS not supported by browser.';
           }
         } else {
-          // Standard M3U: Parse and display stream links
           const lines = m3u.split('\n');
           let html = '<h3>Select a Stream</h3><ul>';
           for (let i = 0; i < lines.length; i++) {
             if (lines[i].startsWith('#EXTINF')) {
               const title = lines[i].split(',')[1] || 'Stream ' + (i + 1);
               const link = lines[i + 1];
-              if (link && link.startsWith('http')) {
-                html += `<li><a href="${link}" target="_blank">${title}</a></li>`;
-              }
+              if (link && link.startsWith('http')) html += `<li><a href="${link}" target="_blank" tabindex="0">${title}</a></li>`;
             }
           }
           html += '</ul>';
           streamList.innerHTML = html;
-          video.style.display = 'none'; // Hide video player for non-HLS
+          video.style.display = 'none';
         }
       })
-      .catch(err => {
-        errorDiv.textContent = 'Error loading playlist: ' + err.message;
-      });
+      .catch(err => errorDiv.textContent = 'Error: ' + err);
+
+    // Keyboard navigation for Android TV
+    document.addEventListener('keydown', (e) => {
+      const links = document.querySelectorAll('#stream-list a');
+      if (links.length > 0) {
+        let focused = document.activeElement;
+        let index = Array.from(links).indexOf(focused);
+        if (e.key === 'ArrowDown' && index < links.length - 1) {
+          links[index + 1].focus();
+        } else if (e.key === 'ArrowUp' && index > 0) {
+          links[index - 1].focus();
+        } else if (e.key === 'Enter' && focused.tagName === 'A') {
+          focused.click();
+        }
+      }
+    });
   </script>
 </body>
 </html>
