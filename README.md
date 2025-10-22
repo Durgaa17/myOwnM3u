@@ -30,10 +30,10 @@ https://smoke.roti.dpdns.org/proxy?url=https://raw.githubusercontent.com/Durgaa1
 3. **Deploy**:
    - Paste `proxy_worker.js` into the Worker editor.
    - Click **Save and Deploy**.
-   - Your Worker runs at `https://smoke.roti.dpdns.org`.
+   - Your Worker runs at `https://your-worker...`
 
 ## Usage
-- **Root Path**: Visit `https://smoke.roti.dpdns.org/` to see `"working as intended"`.
+- **Root Path**: Visit `https://your-worker..` to see `"working as intended"`.
 - **Proxy M3U**: Use `?url=` with your M3U URL:
 
 
