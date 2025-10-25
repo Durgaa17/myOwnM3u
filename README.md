@@ -34,6 +34,6 @@ https://smoke.roti.dpdns.org/proxy?url=https://raw.githubusercontent.com/Durgaa1
 
 ## Usage
 - **Root Path**: Visit `https://your-worker..` to see `"working as intended"`.
-- **Proxy M3U**: Use `?url=` with your M3U URL:
+- **Proxy M3U**: Use `/proxy?url=` with your M3U URL:
 
 
