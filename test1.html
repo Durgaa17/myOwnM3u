@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>IPTV via smoke.roti.dpdns.org</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <style>
+    body { margin: 0; background: #000; display: flex; justify-content: center; }
+    video { width: 100%; max-width: 800px; height: auto; }
+  </style>
+</head>
+<body>
+  <video id="video" controls autoplay></video>
+
+  <script>
+    const video = document.getElementById('video');
+    const githubRawUrl = 'https://raw.githubusercontent.com/iptv-org/iptv/master/channels/us.m3u8'; // Change as needed
+    const proxyUrl = `https://smoke.roti.dpdns.org/?url=${encodeURIComponent(githubRawUrl)}`;
+
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(proxyUrl);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = proxyUrl;
+      video.play();
+    }
+  </script>
+</body>
+</html>
